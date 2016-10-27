@@ -54,8 +54,7 @@ class FCN32VGG:
         # Convert RGB to BGR
 
         with tf.name_scope('Processing'):
-
-            red, green, blue = tf.split(3, 3, rgb)
+            red, green, blue, fg, bg = tf.split(3, 5, rgb)
             # assert red.get_shape().as_list()[1:] == [224, 224, 1]
             # assert green.get_shape().as_list()[1:] == [224, 224, 1]
             # assert blue.get_shape().as_list()[1:] == [224, 224, 1]
@@ -63,6 +62,8 @@ class FCN32VGG:
                 blue - VGG_MEAN[0],
                 green - VGG_MEAN[1],
                 red - VGG_MEAN[2],
+                fg,
+                bg
             ])
 
             if debug:
@@ -132,6 +133,16 @@ class FCN32VGG:
     def _conv_layer(self, bottom, name):
         with tf.variable_scope(name) as scope:
             filt = self.get_conv_filter(name)
+
+            # We increased the number of input dimensions from
+            # 3 (RGB) to 5 (RGB + distance maps). Therefore we
+            # need to add two additional filter banks. According
+            # to the paper, zero initialization works fine for
+            # these banks.
+            if name == 'conv1_1':
+                dist_map_filters = tf.get_variable('conv1_1aug', shape=[3, 3, 2, 64], initializer=tf.constant_initializer(0))
+                filt = tf.concat(2, [filt, dist_map_filters])
+
             conv = tf.nn.conv2d(bottom, filt, [1, 1, 1, 1], padding='SAME')
 
             conv_biases = self.get_bias(name)
