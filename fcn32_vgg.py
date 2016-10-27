@@ -118,7 +118,8 @@ class FCN32VGG:
                                            debug=debug,
                                            name='up', ksize=64, stride=32)
 
-        self.pred_up = tf.argmax(self.upscore, dimension=3)
+        # Not needed, as we need to obtain probabilities
+        # self.pred_up = tf.argmax(self.upscore, dimension=3)
 
     def _max_pool(self, bottom, name, debug):
         pool = tf.nn.max_pool(bottom, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
